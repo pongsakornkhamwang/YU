@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>YouTube Auto Player</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    #player {
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* TOP MINI CONTROL BAR */
+    .top-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: rgba(15, 15, 15, 0.9);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      z-index: 100;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+    }
+
+    .top-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #2ecc71;
+      animation: pulse 1.2s infinite;
+      box-shadow: 0 0 8px #2ecc71;
+    }
+
+    .tab-badge {
+      background: #ff0000;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .status-text {
+      color: #ccc;
+      font-size: 11px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 160px;
+    }
+
+    .top-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .vol-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .vol-btn {
+      background: transparent;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .vol-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 50px;
+      height: 4px;
+      border-radius: 2px;
+      background: #444;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .vol-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff0000;
+      cursor: pointer;
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: #ff8888;
+      border-radius: 4px;
+      padding: 3px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .close-btn:hover {
+      background: #8b0000;
+      color: #fff;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.85);
+      }
+    }
+
+    .err-banner {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      background: #8b0000;
+      color: #fff;
+      padding: 8px 12px;
+      font-size: 12px;
+      z-index: 9999;
+      text-align: center;
+    }
+
+    .err-banner a {
+      color: #fff;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="err-banner" id="errBanner">
+    ⚠️ ตรวจพบการเปิดผ่าน file:// (อาจติด Error 153)
+    <a href="#" id="linkLocal">เปิดผ่าน Localhost</a>
+  </div>
+
+  <div class="top-bar" id="topBar">
+    <div class="top-left">
+      <div class="dot" id="dot"></div>
+      <span class="tab-badge" id="tabBadge">หน้าต่าง #1</span>
+      <span class="status-text" id="statusText">กำลังโหลด...</span>
+    </div>
+
+    <div class="top-right">
+      <div class="vol-ctrl">
+        <button class="vol-btn" id="volBtn" onclick="toggleMute()" title="เปิด/ปิดเสียง">🔇</button>
+        <input type="range" id="volSlider" class="vol-slider" min="0" max="100" value="50"
+          oninput="onVolumeChange(this.value)" title="ระดับเสียง" />
+      </div>
+      <button class="close-btn" onclick="window.close()" title="ปิดหน้าต่างนี้">✕</button>
+    </div>
+  </div>
+
+  <div id="player"></div>
+
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var videoId = params.get('v');
+    var tabIndex = params.get('tab') || '1';
+    var isMute = params.get('mute') === '1';
+    var initialVol = parseInt(params.get('vol'), 10) || 50;
+
+    document.getElementById('tabBadge').textContent = 'หน้าต่าง #' + tabIndex;
+    document.title = 'หน้าต่าง #' + tabIndex + ' — YouTube';
+
+    var volSlider = document.getElementById('volSlider');
+    volSlider.value = initialVol;
+    updateVolIcon();
+
+    if (window.location.protocol === 'file:') {
+      var b = document.getElementById('errBanner');
+      if (b) b.style.display = 'block';
+      var lnk = document.getElementById('linkLocal');
+      if (lnk) lnk.href = 'http://localhost:8080/player.html' + window.location.search;
+    }
+
+    if (!videoId) {
+      document.getElementById('statusText').textContent = 'ไม่พบ Video ID';
+    } else {
+      var tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(tag);
+    }
+
+    var safeOrigin = window.location.origin;
+    if (!safeOrigin || safeOrigin === 'null') {
+      safeOrigin = 'http://localhost:8080';
+    }
+
+    var player;
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        width: '100%',
+        height: '100%',
+        videoId: videoId,
+        host: 'https://www.youtube.com',
+        playerVars: {
+          autoplay: 1,
+          mute: isMute ? 1 : 0,
+          controls: 1,
+          rel: 0,
+          modestbranding: 1,
+          playsinline: 1,
+          enablejsapi: 1,
+          origin: safeOrigin
+        },
+        events: {
+          onReady: function (e) {
+            try {
+              e.target.setVolume(initialVol);
+              if (isMute) e.target.mute();
+              else e.target.unMute();
+              e.target.playVideo();
+            } catch (err) { }
+            document.getElementById('statusText').textContent = 'กำลังเล่น...';
+          },
+          onStateChange: function (e) {
+            if (e.data === YT.PlayerState.PLAYING) {
+              document.getElementById('statusText').textContent = 'กำลังเล่น (ปิดเองเมื่อจบ)';
+              document.getElementById('dot').style.background = '#2ecc71';
+            } else if (e.data === YT.PlayerState.ENDED) {
+              document.getElementById('statusText').textContent = 'คลิปจบแล้ว — กำลังปิด...';
+              document.getElementById('dot').style.background = '#e74c3c';
+              setTimeout(function () {
+                window.close();
+              }, 400);
+            }
+          },
+          onError: function (e) {
+            document.getElementById('statusText').textContent = 'Error ' + e.data;
+            document.getElementById('dot').style.background = '#e74c3c';
+          }
+        }
+      });
+    }
+
+    /* Sound Controls */
+    function onVolumeChange(val) {
+      initialVol = parseInt(val, 10);
+      if (initialVol > 0 && isMute) {
+        isMute = false;
+      } else if (initialVol === 0) {
+        isMute = true;
+      }
+      updateVolIcon();
+      if (player) {
+        try {
+          if (isMute) player.mute();
+          else {
+            player.unMute();
+            player.setVolume(initialVol);
+          }
+        } catch (e) { }
+      }
+    }
+
+    function toggleMute() {
+      isMute = !isMute;
+      if (!isMute && initialVol === 0) {
+        initialVol = 50;
+        volSlider.value = 50;
+      }
+      updateVolIcon();
+      if (player) {
+        try {
+          if (isMute) player.mute();
+          else {
+            player.unMute();
+            player.setVolume(initialVol);
+          }
+        } catch (e) { }
+      }
+    }
+
+    function updateVolIcon() {
+      var btn = document.getElementById('volBtn');
+      if (isMute || initialVol === 0) {
+        btn.textContent = '🔇';
+      } else {
+        btn.textContent = '🔊';
+      }
+    }
+
+    // Fallback: Check if video finished
+    setInterval(function () {
+      if (player && typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
+        var cur = player.getCurrentTime();
+        var dur = player.getDuration();
+        if (dur > 0 && cur >= dur - 0.5) {
+          window.close();
+        }
+      }
+    }, 1000);
+  </script>
+</body>
+
+</html>

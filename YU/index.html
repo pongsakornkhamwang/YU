@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>YouTube Multi-Tab Auto Launcher — เปิดและปิดแท็บอัตโนมัติ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:   #0f0f0f;
+      --bg-card:      #1a1a1a;
+      --bg-input:     #121212;
+      --border:       #2a2a2a;
+      --border-focus: #ff0000;
+      --red:          #ff0000;
+      --red-dark:     #cc0000;
+      --red-glow:     rgba(255, 0, 0, 0.4);
+      --orange:       #ff7700;
+      --text-primary: #f5f5f5;
+      --text-muted:   #aaaaaa;
+      --text-dim:     #707070;
+      --green:        #2ecc71;
+      --green-glow:   rgba(46, 204, 113, 0.3);
+      --radius:       14px;
+      --radius-sm:    8px;
+    }
+
+    body {
+      font-family: 'Prompt', 'Inter', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 16px 60px;
+    }
+
+    /* HEADER */
+    header {
+      width: 100%;
+      max-width: 820px;
+      padding: 30px 0 22px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    .logo-icon {
+      width: 48px;
+      height: 34px;
+      background: var(--red);
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 0 20px var(--red-glow);
+    }
+    .logo-icon svg { width: 24px; fill: #fff; }
+    .header-text h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: -.2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-text p {
+      font-size: .82rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+    .badge {
+      margin-left: auto;
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: .75rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .badge .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+    }
+
+    /* POPUP NOTICE BANNER */
+    .popup-warning {
+      width: 100%;
+      max-width: 820px;
+      background: linear-gradient(135deg, #1d0f05, #140800);
+      border: 1px solid #7a3c00;
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+    .warn-content {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .warn-icon {
+      font-size: 1.4rem;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+    .warn-body strong {
+      color: #ffaa55;
+      font-size: .88rem;
+      display: block;
+      margin-bottom: 3px;
+    }
+    .warn-body p {
+      font-size: .8rem;
+      color: #dfb28e;
+      line-height: 1.45;
+    }
+    .warn-body code {
+      background: rgba(255, 119, 0, 0.2);
+      color: #ff9933;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    .btn-test-popup {
+      background: #351a08;
+      border: 1px solid #854200;
+      color: #ffaa55;
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all .2s;
+    }
+    .btn-test-popup:hover {
+      background: #4a250c;
+      border-color: #ff7700;
+      color: #fff;
+    }
+
+    /* STEP 1: GOOGLE LOGIN */
+    .login-card {
+      width: 100%;
+      max-width: 820px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 24px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .step-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #262626;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .8rem;
+      font-weight: 700;
+      color: var(--text-dim);
+      flex-shrink: 0;
+    }
+    .step-badge.done {
+      background: #0e391b;
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .step-badge.active {
+      background: #3b0000;
+      border-color: var(--red);
+      color: var(--red);
+    }
+    .login-info { flex: 1; }
+    .login-info strong {
+      font-size: .9rem;
+      display: block;
+      margin-bottom: 2px;
+    }
+    .login-info span {
+      font-size: .76rem;
+      color: var(--text-dim);
+    }
+    .btn-login {
+      background: #fff;
+      color: #1a1a1a;
+      border: none;
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: .82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: opacity .2s, transform .1s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-login:hover { opacity: .9; }
+    .btn-login:active { transform: scale(.98); }
+    .btn-login svg { width: 16px; }
+    .btn-login.logged {
+      background: #0f3d1c;
+      color: var(--green);
+      border: 1px solid var(--green);
+      cursor: default;
+    }
+
+    /* DIVIDER */
+    .divider {
+      width: 100%;
+      max-width: 820px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 12px 0 20px;
+    }
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+    .divider-text {
+      font-size: .75rem;
+      color: var(--text-dim);
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+
+    /* MAIN CONFIG CARD */
+    .card {
+      width: 100%;
+      max-width: 820px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: .76rem;
+      font-weight: 700;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .field { margin-bottom: 24px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .84rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 9px;
+    }
+    .label-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .lbl-icon {
+      width: 20px;
+      height: 20px;
+      background: var(--red);
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .7rem;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: .92rem;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+    }
+    input::placeholder { color: var(--text-dim); }
+    input:focus, select:focus {
+      border-color: var(--red);
+      box-shadow: 0 0 0 3px rgba(255,0,0,.15);
+    }
+
+    .field-hint {
+      margin-top: 6px;
+      font-size: .75rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* VIDEO PREVIEW BOX */
+    .video-preview {
+      display: none;
+      background: #141414;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-top: 12px;
+      align-items: center;
+      gap: 16px;
+      transition: border-color .3s, box-shadow .3s;
+    }
+    .video-preview.visible { display: flex; }
+    .video-preview.detected {
+      border-color: var(--green);
+      box-shadow: 0 0 16px var(--green-glow);
+    }
+    .preview-thumb {
+      width: 120px;
+      height: 68px;
+      border-radius: 6px;
+      object-fit: cover;
+      background: #222;
+      flex-shrink: 0;
+      border: 1px solid #333;
+    }
+    .preview-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .preview-title {
+      font-size: .88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .preview-meta {
+      font-size: .76rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .preview-dur-tag {
+      background: #2a0000;
+      border: 1px solid #660000;
+      color: #ff7777;
+      border-radius: 5px;
+      padding: 3px 9px;
+      font-size: .75rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .3s;
+    }
+    .preview-dur-tag.success {
+      background: #0d381b;
+      border-color: var(--green);
+      color: #a3f7c4;
+      box-shadow: 0 0 8px var(--green-glow);
+    }
+
+    /* TABS SELECTOR CHIPS */
+    .tab-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .tab-chip-btn {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: .84rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tab-chip-btn:hover {
+      border-color: #555;
+      color: #fff;
+    }
+    .tab-chip-btn.active {
+      background: #3b0000;
+      border-color: var(--red);
+      color: #fff;
+      box-shadow: 0 0 10px rgba(255,0,0,0.25);
+    }
+    .custom-tab-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .custom-tab-input-wrap input {
+      max-width: 130px;
+    }
+    .custom-tab-hint {
+      font-size: .78rem;
+      color: var(--text-dim);
+    }
+
+    /* DURATION CONTROLS & QUICK PRESETS */
+    .duration-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .dur-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      transition: border-color .2s;
+    }
+    .dur-box:focus-within {
+      border-color: var(--red);
+    }
+    .dur-box label {
+      font-size: .74rem;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+      display: block;
+    }
+    .dur-box input {
+      border: none;
+      background: transparent;
+      padding: 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .dur-box input:focus {
+      box-shadow: none;
+      border: none;
+    }
+
+    /* QUICK DURATION PRESETS */
+    .dur-presets {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+    .dur-preset-label {
+      font-size: .74rem;
+      color: var(--text-dim);
+    }
+    .dur-preset-btn {
+      background: #1e1e1e;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #bbb;
+      padding: 3px 8px;
+      font-size: .74rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .dur-preset-btn:hover {
+      border-color: #666;
+      color: #fff;
+      background: #2a2a2a;
+    }
+
+    /* RUN MODE SELECTION */
+    .mode-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .mode-card {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: all .2s;
+      position: relative;
+    }
+    .mode-card:hover {
+      border-color: #555;
+    }
+    .mode-card.active {
+      border-color: var(--red);
+      background: #200505;
+      box-shadow: 0 0 12px rgba(255,0,0,0.2);
+    }
+    .mode-card input[type="radio"] {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      accent-color: var(--red);
+    }
+    .mode-title {
+      font-size: .88rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .mode-desc {
+      font-size: .74rem;
+      color: var(--text-dim);
+      line-height: 1.4;
+    }
+
+    /* AUDIO OPTIONS */
+    .audio-toggle-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+    }
+    .audio-opt {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .84rem;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+    .audio-opt input { accent-color: var(--red); cursor: pointer; }
+
+    /* LAUNCH BUTTON */
+    .btn-launch {
+      width: 100%;
+      max-width: 820px;
+      padding: 18px;
+      background: var(--red);
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.08rem;
+      font-weight: 700;
+      letter-spacing: .4px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: all .2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      box-shadow: 0 6px 24px rgba(255,0,0,.35);
+      position: relative;
+    }
+    .btn-launch:hover {
+      background: var(--red-dark);
+      box-shadow: 0 8px 30px rgba(255,0,0,.5);
+      transform: translateY(-1px);
+    }
+    .btn-launch:active {
+      transform: translateY(1px);
+    }
+    .btn-launch.running {
+      background: #8b0000;
+      box-shadow: 0 4px 18px rgba(139,0,0,.4);
+    }
+    .btn-launch svg {
+      width: 22px;
+      height: 22px;
+      fill: #fff;
+      flex-shrink: 0;
+    }
+
+    /* STATUS PANEL */
+    .status-panel {
+      width: 100%;
+      max-width: 820px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 26px 30px;
+      margin-top: 22px;
+      display: none;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .status-panel.visible { display: block; }
+
+    .status-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 10px var(--green);
+      animation: pulse-dot 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.85); }
+    }
+    .status-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+    }
+    .status-sub {
+      font-size: .8rem;
+      color: var(--text-dim);
+      margin-left: auto;
+    }
+
+    /* COUNTDOWN & PROGRESS BAR */
+    .countdown-container {
+      background: #121212;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 18px 24px;
+      margin-bottom: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .countdown-info strong {
+      font-size: .84rem;
+      color: var(--text-muted);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .countdown-info p {
+      font-size: .75rem;
+      color: var(--text-dim);
+    }
+    .countdown-digits {
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--red);
+      font-family: 'Inter', sans-serif;
+      font-variant-numeric: tabular-nums;
+      text-shadow: 0 0 12px var(--red-glow);
+    }
+
+    .progress-bar-wrap {
+      background: #0f0f0f;
+      border-radius: 30px;
+      height: 8px;
+      overflow: hidden;
+      margin-bottom: 22px;
+      border: 1px solid #222;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), #ff4d4d);
+      border-radius: 30px;
+      transition: width 1s linear;
+      width: 100%;
+      box-shadow: 0 0 10px rgba(255,0,0,0.5);
+    }
+
+    /* TABS GRID */
+    .tabs-grid-title {
+      font-size: .76rem;
+      font-weight: 700;
+      letter-spacing: .8px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .tabs-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab-card {
+      background: #121212;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .82rem;
+      transition: all .2s;
+    }
+    .tab-card.active {
+      border-color: #3b0000;
+      background: #180808;
+    }
+    .tab-card.closed {
+      border-color: #222;
+      opacity: .45;
+      background: #0f0f0f;
+    }
+    .tab-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      flex-shrink: 0;
+      box-shadow: 0 0 6px var(--green);
+    }
+    .tab-card.closed .tab-dot {
+      background: #555;
+      box-shadow: none;
+    }
+    .tab-name {
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+    .tab-status {
+      margin-left: auto;
+      font-size: .72rem;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* FOOTER */
+    footer {
+      margin-top: 40px;
+      font-size: .78rem;
+      color: var(--text-dim);
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #1e1e1e;
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      padding: 12px 26px;
+      font-size: .86rem;
+      color: var(--text-primary);
+      box-shadow: 0 8px 32px rgba(0,0,0,.7);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform .35s cubic-bezier(.34,1.56,.64,1);
+      z-index: 9999;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* DETECTOR HOLDER: Must be visible to prevent Chrome throttle */
+    #detectorContainer {
+      position: fixed;
+      right: 12px;
+      bottom: 12px;
+      width: 160px;
+      height: 90px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #333;
+      background: #000;
+      z-index: -1;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 20px 18px; }
+      .duration-grid { grid-template-columns: 1fr; }
+      .mode-cards { grid-template-columns: 1fr; }
+      .popup-warning { flex-direction: column; align-items: flex-start; }
+      .countdown-container { flex-direction: column; align-items: flex-start; }
+      .countdown-digits { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M21.8 8s-.2-1.4-.8-2c-.8-.8-1.6-.8-2-.9C16.6 5 12 5 12 5s-4.6 0-7 .1c-.4.1-1.2.1-2 .9-.6.6-.8 2-.8 2S2 9.6 2 11.2v1.5C2 14.4 2.2 16 2.2 16s.2 1.4.8 2c.8.8 1.7.8 2.1.9C6.5 19 12 19 12 19s4.6 0 7-.2c.4-.1 1.2-.1 2-.9.6-.6.8-2 .8-2S22 14.4 22 12.8v-1.5C22 9.6 21.8 8 21.8 8zM9.7 14.5v-5l5.4 2.5-5.4 2.5z"/></svg>
+    </div>
+    <div class="header-text">
+      <h1>YouTube Multi-Tab Auto Launcher</h1>
+      <p>เปิดหลายแท็บ YouTube พร้อมกัน และปิดแท็บให้อัตโนมัติเมื่อคลิปจบ</p>
+    </div>
+    <span class="badge">
+      <span class="dot"></span>
+      พร้อมใช้งาน
+    </span>
+  </header>
+
+  <!-- FILE PROTOCOL DETECTION BANNER (แก้ Error 153) -->
+  <div class="file-protocol-banner" id="fileProtocolBanner" style="display:none; width: 100%; max-width: 820px; background: linear-gradient(135deg, #2e0905, #1d0300); border: 2px solid #ff3333; border-radius: var(--radius); padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 4px 20px rgba(255,0,0,0.25);">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:flex-start; gap:12px;">
+        <span style="font-size:1.8rem; line-height:1;">⚠️</span>
+        <div>
+          <strong style="color:#ff6666; font-size:.95rem; display:block; margin-bottom:4px;">ตรวจพบการเปิดไฟล์ผ่าน file:// ซึ่งทำให้ YouTube ขึ้นข้อผิดพลาด 153</strong>
+          <p style="font-size:.82rem; color:#f0c0b8; line-height:1.45; margin:0;">
+            YouTube บล็อกการเล่นวิดีโอหากไม่ได้ส่ง Referrer ผ่าน HTTP Server<br>
+            👉 แนะนำให้ดับเบิลคลิกไฟล์ <strong><code>🚀 เปิดโปรแกรม (Start Server).bat</code></strong> หรือคลิกปุ่มเพื่อเปิดผ่าน Local Server
+          </p>
+        </div>
+      </div>
+      <a href="http://localhost:8080/index.html" style="background:#ff2222; border:1px solid #fff; color:#fff; padding:8px 16px; border-radius:var(--radius-sm); font-family:inherit; font-size:.82rem; font-weight:700; text-decoration:none; white-space:nowrap; align-self:center; transition:all .2s;">
+        🚀 เปิดผ่าน Localhost:8080
+      </a>
+    </div>
+  </div>
+
+  <!-- POPUP PERMISSION BANNER -->
+  <div class="popup-warning">
+    <div class="warn-content">
+      <span class="warn-icon">&#9888;&#65039;</span>
+      <div class="warn-body">
+        <strong>ตั้งค่าเบราว์เซอร์ &mdash; อนุญาต Pop-up เพื่อให้เปิดได้ครบทุกแท็บ</strong>
+        <p>
+          Chrome และ Edge จะบล็อกแท็บที่ 2 เป็นต้นไปหากยังไม่อนุญาต ให้กดปุ่มทดสอบด้านขวาเพื่อกด <code>Always allow pop-ups</code>
+        </p>
+      </div>
+    </div>
+    <button class="btn-test-popup" onclick="testPopups()">
+      🔔 ทดสอบเปิดแท็บ &amp; ขอสิทธิ์
+    </button>
+  </div>
+
+  <!-- STEP 1: GOOGLE LOGIN -->
+  <div class="login-card" id="loginCard">
+    <div class="step-badge active" id="loginStep">1</div>
+    <div class="login-info">
+      <strong>&#128274; เข้าสู่ระบบ Google / YouTube (เสริมความเสถียร)</strong>
+      <span>เข้าสู่ระบบ Google เพื่อให้ทุกแท็บมี Session ล็อกอินและไม่ติดหน้ายืนยันตัวตน</span>
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="openLogin()">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+        <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+        <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
+        <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+      </svg>
+      Login ด้วย Google
+    </button>
+  </div>
+
+  <!-- DIVIDER -->
+  <div class="divider">
+    <div class="divider-line"></div>
+    <span class="divider-text">STEP 2 &mdash; ตั้งค่าการรันแท็บ</span>
+    <div class="divider-line"></div>
+  </div>
+
+  <!-- MAIN CARD -->
+  <div class="card">
+    <div class="card-title">&#9881; ตั้งค่าการรันคลิป</div>
+
+    <!-- FIELD 1: URL -->
+    <div class="field">
+      <label for="urlInput">
+        <span class="label-left">
+          <span class="lbl-icon">&#128279;</span>
+          ลิงก์ YouTube (URL)
+        </span>
+        <span id="detectStatusText" style="font-size: .78rem; font-weight: 500; color: var(--text-dim);"></span>
+      </label>
+      <input
+        type="text"
+        id="urlInput"
+        placeholder="https://www.youtube.com/watch?v=... หรือ https://youtu.be/..."
+        oninput="onUrlChange()"
+      />
+      
+      <!-- Video Preview Card -->
+      <div class="video-preview" id="videoPreview">
+        <img class="preview-thumb" id="previewThumb" src="" alt="Thumbnail" />
+        <div class="preview-details">
+          <div class="preview-title" id="previewTitle">กำลังโหลดข้อมูลวิดีโอ...</div>
+          <div class="preview-meta">
+            <span id="previewIdTag">ID: -</span>
+            <span class="preview-dur-tag" id="previewDurTag">
+              <span id="durTagIcon">⏳</span>
+              <span id="durTagText">ความยาวคลิป: กำลังตรวจจับ...</span>
+            </span>
+          </div>
+        </div>
+      </div>
+      <p class="field-hint">&#128161; รองรับทั้ง youtube.com/watch?v= , youtu.be/ , Shorts และ Embed</p>
+    </div>
+
+    <!-- FIELD 2: TAB COUNT -->
+    <div class="field">
+      <label>
+        <span class="label-left">
+          <span class="lbl-icon">&#128194;</span>
+          จำนวนแท็บที่จะเปิด (เช่น 10 แท็บ)
+        </span>
+      </label>
+      <div class="tab-chips">
+        <button type="button" class="tab-chip-btn" onclick="selectTabCount(1)">1 แท็บ</button>
+        <button type="button" class="tab-chip-btn" onclick="selectTabCount(3)">3 แท็บ</button>
+        <button type="button" class="tab-chip-btn" onclick="selectTabCount(5)">5 แท็บ</button>
+        <button type="button" class="tab-chip-btn active" onclick="selectTabCount(10)">10 แท็บ</button>
+        <button type="button" class="tab-chip-btn" onclick="selectTabCount(15)">15 แท็บ</button>
+        <button type="button" class="tab-chip-btn" onclick="selectTabCount(20)">20 แท็บ</button>
+      </div>
+      <div class="custom-tab-input-wrap">
+        <input type="number" id="tabCountInput" value="10" min="1" max="50" onchange="onCustomTabCountChange()" />
+        <span class="custom-tab-hint">หรือพิมพ์จำนวนแท็บที่ต้องการ (แนะนำ 5 - 20 แท็บตามสมรรถนะเครื่อง)</span>
+      </div>
+    </div>
+
+    <!-- FIELD 3: DURATION & BUFFER -->
+    <div class="field">
+      <label>
+        <span class="label-left">
+          <span class="lbl-icon">&#9200;</span>
+          ระยะเวลาเล่นคลิปก่อนปิดแท็บ
+        </span>
+        <span style="font-size: .75rem; color: var(--green); font-weight:600;" id="durAutoBadge">&#10003; ตรวจจับอัตโนมัติ / ปรับเองได้</span>
+      </label>
+      <div class="duration-grid">
+        <div class="dur-box">
+          <label>นาที (Minutes)</label>
+          <input type="number" id="durMinutes" value="3" min="0" max="600" onchange="updateTotalTimeDisplay()" />
+        </div>
+        <div class="dur-box">
+          <label>วินาที (Seconds)</label>
+          <input type="number" id="durSeconds" value="0" min="0" max="59" onchange="updateTotalTimeDisplay()" />
+        </div>
+        <div class="dur-box">
+          <label>เวลาเผื่อโหลดหน้าเว็บ (Buffer)</label>
+          <input type="number" id="durBuffer" value="4" min="0" max="60" onchange="updateTotalTimeDisplay()" />
+        </div>
+      </div>
+
+      <!-- Quick duration buttons -->
+      <div class="dur-presets">
+        <span class="dur-preset-label">เลือกเวลาด่วน:</span>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(0, 30)">30 วินาที</button>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(1, 0)">1 นาที</button>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(2, 0)">2 นาที</button>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(3, 0)">3 นาที</button>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(5, 0)">5 นาที</button>
+        <button type="button" class="dur-preset-btn" onclick="applyPresetDuration(10, 0)">10 นาที</button>
+      </div>
+
+      <p class="field-hint" id="totalTimeHint">เวลารวมก่อนปิดแท็บ: ประมาณ 03:04 นาที (ระบบจะนับถอยหลังและปิดทุกแท็บให้อัตโนมัติ)</p>
+    </div>
+
+    <!-- FIELD 4: MODE -->
+    <div class="field">
+      <label>
+        <span class="label-left">
+          <span class="lbl-icon">&#128736;</span>
+          รูปแบบการแสดงผล
+        </span>
+      </label>
+      <div class="mode-cards">
+        <div class="mode-card active" id="modeCardMultiview" onclick="selectMode('multiview')">
+          <input type="radio" name="runMode" id="modeMultiview" value="multiview" checked />
+          <div class="mode-title">&#128187; เปิด 1 หน้าเว็บ รวม 10 จอพร้อมกัน (แนะนำ ⭐)</div>
+          <div class="mode-desc">เด้งไปหน้าใหม่ 1 แท็บ รวมจอ YouTube 10 จอเล่นพร้อมกันทันที ไม่โดนเบราว์เซอร์บล็อก 100% และปิดเองเมื่อคลิปจบ</div>
+        </div>
+        <div class="mode-card" id="modeCardTabs" onclick="selectMode('tabs')">
+          <input type="radio" name="runMode" id="modeTabs" value="tabs" />
+          <div class="mode-title">🪟 เปิด 10 หน้าต่างป๊อปอัป ซ้อนเหลื่อมกัน (Cascading Windows)</div>
+          <div class="mode-desc">เด้งหน้าต่างเครื่องเล่นขนาดกะทัดรัดออกมา 10 หน้าต่าง ซ้อนกันบนหน้าจอ ปรับเสียงได้ และปิดตัวเองอัตโนมัติเมื่อคลิปจบ</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FIELD 5: AUDIO -->
+    <div class="field">
+      <label>
+        <span class="label-left">
+          <span class="lbl-icon">&#128266;</span>
+          ระบบเสียง (Audio Controls)
+        </span>
+      </label>
+      <div class="audio-toggle-row" style="flex-direction: column; align-items: flex-start; gap: 12px;">
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+          <label class="audio-opt">
+            <input type="radio" name="audioMode" value="mute" checked onchange="onAudioModeChange()" />
+            <span>🔇 ปิดเสียง (Mute) &mdash; <strong style="color:var(--green)">แนะนำ</strong> ให้เล่นอัตโนมัติในเบราว์เซอร์ได้ 100%</span>
+          </label>
+          <label class="audio-opt">
+            <input type="radio" name="audioMode" value="first" onchange="onAudioModeChange()" />
+            <span>🔊 เปิดเสียงเฉพาะจอแรก (ฟังเพลงได้ ไม่หนวกหู)</span>
+          </label>
+          <label class="audio-opt">
+            <input type="radio" name="audioMode" value="all" onchange="onAudioModeChange()" />
+            <span>📢 เปิดเสียงทุกจอ</span>
+          </label>
+        </div>
+
+        <!-- Slider Bar for Volume -->
+        <div id="volumeSliderWrap" style="display:none; width: 100%; padding-top: 8px; border-top: 1px solid #2a2a2a; align-items: center; gap: 14px;">
+          <span style="font-size: .8rem; color: var(--text-muted); white-space: nowrap;">🎚️ ระดับเสียงเริ่มต้น:</span>
+          <input
+            type="range"
+            id="volSlider"
+            min="0"
+            max="100"
+            value="50"
+            style="flex: 1; accent-color: var(--red); cursor: pointer;"
+            oninput="document.getElementById('volDisplay').textContent = this.value + '%'"
+          />
+          <span id="volDisplay" style="font-size: .84rem; font-weight: 700; color: var(--red); min-width: 42px;">50%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- USER SIMULATION BADGE -->
+    <div style="background: linear-gradient(135deg, #0d2215, #08150c); border: 1px solid #1e4a28; border-radius: var(--radius-sm); padding: 14px 18px; margin-top: 20px; display: flex; align-items: flex-start; gap: 14px;">
+      <span style="font-size: 1.5rem; line-height: 1;">🛡️</span>
+      <div style="font-size: .8rem; color: #b8e6c4; line-height: 1.5;">
+        <strong style="color: #69f0ae; font-size: .88rem; display: block; margin-bottom: 3px;">ระบบจำลองผู้ชมแยกคน (User Simulation Engine)</strong>
+        ระบบจะสลับเวลาเริ่มเล่นแบบสุ่มธรรมชาติ (Staggered Join 1.2s - 2.8s) และกระจายอัตลักษณ์ผู้รับชมแยกอิสระในแต่ละจอ เพื่อให้ระบบตรวจจับของ YouTube มองว่าเป็นการเข้าชมจากคนจริงๆ และช่วยให้นับยอดวิวได้เสถียรที่สุด
+      </div>
+    </div>
+
+  </div>
+
+  <!-- LAUNCH BUTTON -->
+  <button class="btn-launch" id="launchBtn" onclick="launchTabs()">
+    <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    <span id="launchBtnText">เริ่มรันแท็บอัตโนมัติ (10 แท็บ)</span>
+  </button>
+
+  <!-- LIVE STATUS PANEL -->
+  <div class="status-panel" id="statusPanel">
+    <div class="status-header">
+      <div class="status-dot" id="statusDot"></div>
+      <span class="status-title" id="statusTitle">กำลังรันแท็บ YouTube...</span>
+      <span class="status-sub" id="statusSub"></span>
+    </div>
+
+    <!-- COUNTDOWN CLOCK -->
+    <div class="countdown-container">
+      <div class="countdown-info">
+        <strong>เวลานับถอยหลังจนจบวิดีโอ</strong>
+        <p>เมื่อตัวนับเวลาถึง 00:00 ระบบจะสั่งปิดแท็บทั้งหมดให้อัตโนมัติ</p>
+      </div>
+      <div class="countdown-digits" id="countdownDigits">03:04</div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBarFill"></div>
+    </div>
+
+    <!-- TABS GRID -->
+    <div class="tabs-grid-title">
+      <span>รายการแท็บที่เปิดทำงาน</span>
+      <span id="tabCountStatus">เปิดอยู่ 10 / 10 แท็บ</span>
+    </div>
+    <div class="tabs-grid" id="tabsGrid"></div>
+
+    <!-- MANUAL CLOSE ALL BUTTON -->
+    <button
+      type="button"
+      style="margin-top:14px; background:#222; border:1px solid #444; color:#eee; border-radius:8px; padding:10px 18px; font-family:inherit; font-size:.84rem; cursor:pointer;"
+      onclick="stopAll(true)"
+    >
+      &#9632; สั่งปิดทุกแท็บทันที
+    </button>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    YouTube Multi-Tab Auto Launcher &middot; ออกแบบสำหรับ Desktop Chrome / Edge / Brave / Firefox<br>
+    เปิดแท็บจริง &middot; ตรวจจับเวลาคลิปอัตโนมัติ &middot; ปิดแท็บเองเมื่อคลิปจบ
+  </footer>
+
+  <!-- TOAST NOTIFICATION -->
+  <div class="toast" id="toast">
+    <span id="toastIcon">&#9989;</span>
+    <span id="toastMsg">สำเร็จ</span>
+  </div>
+
+  <!-- DETECTOR PLAYER HOLDER -->
+  <div id="detectorContainer">
+    <div id="ytDetectorPlayer"></div>
+  </div>
+
+  <!-- YOUTUBE IFRAME API SCRIPT -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    /* ──────────────────────────────────────────────
+       State Variables
+    ────────────────────────────────────────────── */
+    var detectorPlayer = null;
+    var detectorReady = false;
+    var currentVideoId = null;
+    var runState = null;
+    var selectedTabCount = 10;
+    var selectedMode = 'multiview'; // 'multiview' (1 tab with multi screens) or 'tabs' (separate tabs)
+    var durationDetectTimer = null;
+    var isDurationDetected = false;
+
+    /* ──────────────────────────────────────────────
+       YouTube Iframe API Ready (Detector)
+    ────────────────────────────────────────────── */
+    function onYouTubeIframeAPIReady() {
+      detectorPlayer = new YT.Player('ytDetectorPlayer', {
+        width: '160',
+        height: '90',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          mute: 1,
+          rel: 0,
+          playsinline: 1
+        },
+        events: {
+          onReady: function() {
+            detectorReady = true;
+            if (currentVideoId && !isDurationDetected) {
+              startFastDurationDetection(currentVideoId);
+            }
+          },
+          onStateChange: function(e) {
+            // As soon as video buffers or plays, read duration immediately!
+            if (e.data === YT.PlayerState.BUFFERING || e.data === YT.PlayerState.PLAYING || e.data === YT.PlayerState.PAUSED || e.data === YT.PlayerState.CUED) {
+              checkAndApplyDuration();
+            }
+          }
+        }
+      });
+    }
+
+    function checkAndApplyDuration() {
+      if (!detectorPlayer || typeof detectorPlayer.getDuration !== 'function') return false;
+      var d = Math.round(detectorPlayer.getDuration());
+      if (d > 0) {
+        if (durationDetectTimer) clearInterval(durationDetectTimer);
+        setDurationInputs(d);
+        try {
+          if (typeof detectorPlayer.pauseVideo === 'function') detectorPlayer.pauseVideo();
+        } catch(e) {}
+        return true;
+      }
+      return false;
+    }
+
+    /* ──────────────────────────────────────────────
+       Extract YouTube Video ID
+    ────────────────────────────────────────────── */
+    function extractVideoId(url) {
+      if (!url) return null;
+      url = url.trim();
+      var patterns = [
+        /youtu\.be\/([A-Za-z0-9_\-]{11})/,
+        /[?&]v=([A-Za-z0-9_\-]{11})/,
+        /\/embed\/([A-Za-z0-9_\-]{11})/,
+        /\/shorts\/([A-Za-z0-9_\-]{11})/
+      ];
+      for (var i = 0; i < patterns.length; i++) {
+        var m = url.match(patterns[i]);
+        if (m) return m[1];
+      }
+      return null;
+    }
+
+    /* ──────────────────────────────────────────────
+       Format seconds to MM:SS
+    ────────────────────────────────────────────── */
+    function formatTime(s) {
+      s = Math.max(0, Math.round(s));
+      var m = Math.floor(s / 60);
+      var sec = s % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    /* ──────────────────────────────────────────────
+       Toast Message
+    ────────────────────────────────────────────── */
+    function showToast(msg, icon, dur) {
+      icon = icon || '✅';
+      dur = dur || 3200;
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastMsg').textContent = msg;
+      var t = document.getElementById('toast');
+      t.classList.add('show');
+      setTimeout(function() { t.classList.remove('show'); }, dur);
+    }
+
+    /* ──────────────────────────────────────────────
+       URL Input Change & Auto Meta Fetch
+    ────────────────────────────────────────────── */
+    function onUrlChange() {
+      var val = document.getElementById('urlInput').value;
+      var vid = extractVideoId(val);
+      if (vid && vid !== currentVideoId) {
+        currentVideoId = vid;
+        isDurationDetected = false;
+        detectVideoMeta(vid);
+      } else if (!vid) {
+        currentVideoId = null;
+        isDurationDetected = false;
+        if (durationDetectTimer) clearInterval(durationDetectTimer);
+        document.getElementById('videoPreview').classList.remove('visible', 'detected');
+        document.getElementById('detectStatusText').textContent = '';
+      }
+    }
+
+    function detectVideoMeta(vid) {
+      var preview = document.getElementById('videoPreview');
+      var thumb = document.getElementById('previewThumb');
+      var title = document.getElementById('previewTitle');
+      var idTag = document.getElementById('previewIdTag');
+      var durTag = document.getElementById('previewDurTag');
+      var durTagIcon = document.getElementById('durTagIcon');
+      var durTagText = document.getElementById('durTagText');
+      var statusText = document.getElementById('detectStatusText');
+
+      // 1. Show preview card with thumbnail immediately (0ms)
+      preview.classList.add('visible');
+      preview.classList.remove('detected');
+      thumb.src = 'https://i.ytimg.com/vi/' + vid + '/hqdefault.jpg';
+      title.textContent = 'กำลังโหลดข้อมูลวิดีโอ...';
+      idTag.textContent = 'ID: ' + vid;
+      
+      durTag.className = 'preview-dur-tag';
+      durTagIcon.textContent = '⏳';
+      durTagText.textContent = 'กำลังตรวจจับความยาว...';
+      statusText.textContent = 'กำลังดึงข้อมูล...';
+      statusText.style.color = 'var(--text-dim)';
+
+      // 2. Fast title fetch via noembed
+      fetch('https://noembed.com/embed?url=https://www.youtube.com/watch?v=' + vid)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data && data.title) {
+            title.textContent = data.title;
+          } else {
+            title.textContent = 'วิดีโอ YouTube (' + vid + ')';
+          }
+        })
+        .catch(function() {
+          title.textContent = 'วิดีโอ YouTube (' + vid + ')';
+        });
+
+      // 3. Fast Duration Detection
+      startFastDurationDetection(vid);
+    }
+
+    function startFastDurationDetection(vid) {
+      if (durationDetectTimer) clearInterval(durationDetectTimer);
+
+      if (!detectorReady || !detectorPlayer) {
+        // Wait briefly for player ready
+        var waitCount = 0;
+        durationDetectTimer = setInterval(function() {
+          waitCount++;
+          if (detectorReady && detectorPlayer) {
+            clearInterval(durationDetectTimer);
+            startFastDurationDetection(vid);
+          } else if (waitCount > 15) {
+            clearInterval(durationDetectTimer);
+            onDetectFallbackNotice();
+          }
+        }, 150);
+        return;
+      }
+
+      // CRITICAL SPEED FIX:
+      // Using loadVideoById with mute:1 forces YouTube to load media metadata in ~300ms!
+      try {
+        detectorPlayer.loadVideoById({
+          videoId: vid,
+          startSeconds: 0
+        });
+        detectorPlayer.mute();
+      } catch(e) {
+        try {
+          detectorPlayer.cueVideoById(vid);
+        } catch(err) {}
+      }
+
+      var attempts = 0;
+      durationDetectTimer = setInterval(function() {
+        attempts++;
+        if (checkAndApplyDuration()) {
+          return;
+        }
+
+        // If after 2.5s duration hasn't arrived, show quick manual option
+        if (attempts >= 15) {
+          clearInterval(durationDetectTimer);
+          if (!isDurationDetected) {
+            onDetectFallbackNotice();
+          }
+        }
+      }, 150);
+    }
+
+    function onDetectFallbackNotice() {
+      var statusText = document.getElementById('detectStatusText');
+      var durTag = document.getElementById('previewDurTag');
+      var durTagIcon = document.getElementById('durTagIcon');
+      var durTagText = document.getElementById('durTagText');
+
+      durTagIcon.textContent = '⏱️';
+      durTagText.textContent = 'ความยาว: ' + formatTime(getDurationFromInputs());
+      statusText.textContent = 'ℹ️ สามารถกดเลือกเวลาด่วน หรือพิมพ์ระบุเองได้ทันที';
+      statusText.style.color = '#ffaa55';
+    }
+
+    function getDurationFromInputs() {
+      var m = parseInt(document.getElementById('durMinutes').value, 10) || 0;
+      var s = parseInt(document.getElementById('durSeconds').value, 10) || 0;
+      return (m * 60) + s;
+    }
+
+    /* ──────────────────────────────────────────────
+       Called when duration is successfully detected
+    ────────────────────────────────────────────── */
+    function setDurationInputs(seconds) {
+      isDurationDetected = true;
+      var m = Math.floor(seconds / 60);
+      var s = seconds % 60;
+
+      document.getElementById('durMinutes').value = m;
+      document.getElementById('durSeconds').value = s;
+
+      var formatted = formatTime(seconds);
+      var durTag = document.getElementById('previewDurTag');
+      var durTagIcon = document.getElementById('durTagIcon');
+      var durTagText = document.getElementById('durTagText');
+      var statusText = document.getElementById('detectStatusText');
+      var preview = document.getElementById('videoPreview');
+
+      // Update badge to green success state
+      durTag.className = 'preview-dur-tag success';
+      durTagIcon.textContent = '✅';
+      durTagText.textContent = 'ความยาวคลิป: ' + formatted + ' นาที';
+
+      preview.classList.add('detected');
+
+      statusText.textContent = '✅ ตรวจเสร็จแล้ว (' + formatted + ' นาที)';
+      statusText.style.color = 'var(--green)';
+
+      updateTotalTimeDisplay();
+      showToast('ตรวจพบความยาวคลิป: ' + formatted + ' นาที ✅', '⏱️', 2500);
+    }
+
+    /* Quick Preset Duration Buttons */
+    function applyPresetDuration(minutes, seconds) {
+      document.getElementById('durMinutes').value = minutes;
+      document.getElementById('durSeconds').value = seconds;
+
+      var totalSec = (minutes * 60) + seconds;
+      var formatted = formatTime(totalSec);
+
+      var durTag = document.getElementById('previewDurTag');
+      var durTagIcon = document.getElementById('durTagIcon');
+      var durTagText = document.getElementById('durTagText');
+      var statusText = document.getElementById('detectStatusText');
+
+      durTag.className = 'preview-dur-tag success';
+      durTagIcon.textContent = '⏱️';
+      durTagText.textContent = 'ตั้งเวลา: ' + formatted + ' นาที';
+
+      statusText.textContent = '✓ ตั้งเวลา: ' + formatted + ' นาที';
+      statusText.style.color = 'var(--green)';
+
+      updateTotalTimeDisplay();
+      showToast('ตั้งเวลาเล่นเป็น ' + formatted + ' นาทีแล้ว', '⏱️', 2000);
+    }
+
+    function updateTotalTimeDisplay() {
+      var m = parseInt(document.getElementById('durMinutes').value, 10) || 0;
+      var s = parseInt(document.getElementById('durSeconds').value, 10) || 0;
+      var buf = parseInt(document.getElementById('durBuffer').value, 10) || 0;
+      var total = (m * 60) + s + buf;
+      var hint = document.getElementById('totalTimeHint');
+      hint.textContent = 'เวลารวมก่อนปิดแท็บ: ' + formatTime(total) + ' นาที (คลิป ' + formatTime((m*60)+s) + ' + เผื่อโหลด ' + buf + ' วิ)';
+    }
+
+    /* ──────────────────────────────────────────────
+       Tab Count Selection
+    ────────────────────────────────────────────── */
+    function selectTabCount(n) {
+      selectedTabCount = n;
+      document.getElementById('tabCountInput').value = n;
+      var btns = document.querySelectorAll('.tab-chip-btn');
+      btns.forEach(function(b) {
+        if (parseInt(b.textContent, 10) === n) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+      updateLaunchBtnText();
+    }
+
+    function onCustomTabCountChange() {
+      var val = parseInt(document.getElementById('tabCountInput').value, 10);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > 50) val = 50;
+      document.getElementById('tabCountInput').value = val;
+      selectedTabCount = val;
+      var btns = document.querySelectorAll('.tab-chip-btn');
+      btns.forEach(function(b) {
+        if (parseInt(b.textContent, 10) === val) {
+          b.classList.add('active');
+        } else {
+          b.classList.remove('active');
+        }
+      });
+      updateLaunchBtnText();
+    }
+
+    function updateLaunchBtnText() {
+      if (selectedMode === 'multiview') {
+        document.getElementById('launchBtnText').textContent = 'เริ่มรันคลิป (1 หน้า รวม ' + selectedTabCount + ' จอพร้อมกัน)';
+      } else {
+        document.getElementById('launchBtnText').textContent = 'เริ่มรัน (' + selectedTabCount + ' หน้าต่างป๊อปอัปซ้อนกัน)';
+      }
+    }
+
+    /* ──────────────────────────────────────────────
+       Mode Selection
+    ────────────────────────────────────────────── */
+    function selectMode(mode) {
+      selectedMode = mode;
+      document.getElementById('modeCardMultiview').classList.toggle('active', mode === 'multiview');
+      document.getElementById('modeCardTabs').classList.toggle('active', mode === 'tabs');
+      document.getElementById('modeMultiview').checked = (mode === 'multiview');
+      document.getElementById('modeTabs').checked = (mode === 'tabs');
+      updateLaunchBtnText();
+    }
+
+    /* ──────────────────────────────────────────────
+       Popup Permission Test
+    ────────────────────────────────────────────── */
+    function testPopups() {
+      var w1 = window.open('about:blank', '_blank');
+      var w2 = window.open('about:blank', '_blank');
+      if (w1 && w2) {
+        showToast('เปิดแท็บทดสอบได้สำเร็จ! เบราว์เซอร์ของคุณอนุญาต Pop-up แล้ว', '🎉', 4000);
+        setTimeout(function() {
+          try { w1.close(); } catch(e) {}
+          try { w2.close(); } catch(e) {}
+        }, 1500);
+      } else {
+        alert('⚠️ เบราว์เซอร์บล็อกการเปิดหลายแท็บ!\n\n💡 แนะนำให้ใช้ "โหมดเปิด 1 หน้า รวม 10 จอ" (ระบบจะเปิดได้ทันที 100% โดยไม่โดนบล็อกเลย)\n\nหรือหากต้องการเปิดแยกหลายแท็บ ให้คลิกที่ไอคอนกากบาทสีแดงบนแถบ Address Bar แล้วเลือก "Always allow pop-ups"');
+      }
+    }
+
+    /* ──────────────────────────────────────────────
+       Google Login
+    ────────────────────────────────────────────── */
+    var loginWin = null;
+    function openLogin() {
+      loginWin = window.open(
+        'https://accounts.google.com/signin/v2/identifier?service=youtube&hl=th',
+        'google_login',
+        'width=480,height=620,toolbar=0,menubar=0,location=1,status=0,scrollbars=1,resizable=1'
+      );
+      if (!loginWin) {
+        showToast('กรุณาอนุญาต Pop-up ก่อนทำการ Login', '⚠️', 4000);
+        return;
+      }
+      showToast('เปิดหน้า Login แล้ว — กรุณาเข้าสู่ระบบให้เสร็จสิ้น', '🔑', 3500);
+      var interval = setInterval(function() {
+        if (!loginWin || loginWin.closed) {
+          clearInterval(interval);
+          var step = document.getElementById('loginStep');
+          var btn = document.getElementById('loginBtn');
+          var card = document.getElementById('loginCard');
+          step.className = 'step-badge done';
+          step.textContent = '✓';
+          btn.className = 'btn-login logged';
+          btn.innerHTML = '<span>✅</span> เข้าสู่ระบบแล้ว';
+          card.style.borderColor = 'var(--green)';
+          showToast('พร้อมรันคลิปแล้ว!', '✅', 3000);
+        }
+      }, 1000);
+    }
+
+    /* ──────────────────────────────────────────────
+       LAUNCH TABS / MULTIVIEW
+    ────────────────────────────────────────────── */
+    function launchTabs() {
+      var urlRaw = document.getElementById('urlInput').value.trim();
+      var videoId = extractVideoId(urlRaw);
+
+      if (!videoId) {
+        showToast('กรุณากรอกลิงก์ YouTube ที่ถูกต้องก่อนเริ่มรัน', '⚠️', 3500);
+        document.getElementById('urlInput').focus();
+        return;
+      }
+
+      // Compute total duration in seconds
+      var m = parseInt(document.getElementById('durMinutes').value, 10) || 0;
+      var s = parseInt(document.getElementById('durSeconds').value, 10) || 0;
+      var buf = parseInt(document.getElementById('durBuffer').value, 10) || 0;
+      var totalSeconds = (m * 60) + s + buf;
+
+      if (totalSeconds <= 0) {
+        totalSeconds = 180; // default 3 minutes if 0
+      }
+
+      // Check audio
+      var audioOpt = document.querySelector('input[name="audioMode"]:checked').value;
+      var isMuted = (audioOpt === 'mute');
+      var volSlider = document.getElementById('volSlider');
+      var volVal = volSlider ? volSlider.value : '50';
+
+      stopPreviousSession();
+
+      var tabCount = selectedTabCount;
+      var wins = [];
+      var cards = [];
+
+      // Status UI initialization
+      var panel = document.getElementById('statusPanel');
+      var grid = document.getElementById('tabsGrid');
+      var statusTitle = document.getElementById('statusTitle');
+      var statusSub = document.getElementById('statusSub');
+      var statusDot = document.getElementById('statusDot');
+      var countdownDigits = document.getElementById('countdownDigits');
+      var progressFill = document.getElementById('progressBarFill');
+      var tabCountStatus = document.getElementById('tabCountStatus');
+
+      panel.classList.add('visible');
+      grid.innerHTML = '';
+      progressFill.style.width = '100%';
+      statusDot.style.background = 'var(--green)';
+      statusDot.style.boxShadow = '0 0 10px var(--green)';
+      countdownDigits.textContent = formatTime(totalSeconds);
+
+      /* ──────────────────────────────────────────────
+         MODE 1: MULTI-VIEW (เปิด 1 หน้า รวม 10 จอเล่นพร้อมกัน)
+      ────────────────────────────────────────────── */
+      if (selectedMode === 'multiview') {
+        var multiUrl = 'multiview.html?v=' + videoId +
+                       '&count=' + tabCount +
+                       '&dur=' + totalSeconds +
+                       '&mute=' + (isMuted ? '1' : '0') +
+                       '&vol=' + volVal +
+                       '&routing=' + audioOpt +
+                       '&autoclose=1';
+
+        // Opens exactly 1 tab -> 100% NEVER blocked by browser!
+        var multiWin = window.open(multiUrl, '_blank');
+        wins.push(multiWin);
+
+        for (var i = 0; i < tabCount; i++) {
+          var c = document.createElement('div');
+          c.className = 'tab-card active';
+          c.id = 'tab_card_' + i;
+          c.innerHTML =
+            '<span class="tab-dot"></span>' +
+            '<span class="tab-name">จอ #' + (i + 1) + '</span>' +
+            '<span class="tab-status" id="tab_status_' + i + '">กำลังเล่น</span>';
+          grid.appendChild(c);
+          cards.push(c);
+        }
+
+        tabCountStatus.textContent = 'กำลังเล่น ' + tabCount + ' จอในหน้าใหม่';
+        statusTitle.textContent = 'กำลังเล่น ' + tabCount + ' จอพร้อมกันในหน้า Multi-View';
+        statusSub.textContent = 'Video ID: ' + videoId + ' (เปิดหน้าต่าง 1 แท็บ รวม ' + tabCount + ' จอ)';
+
+        showToast('เปิดหน้า Multi-View รวม ' + tabCount + ' จอเรียบร้อยแล้ว! 🚀', '🎬', 3500);
+
+      } else {
+        /* ──────────────────────────────────────────────
+           MODE 2: 10 CASCADING POPUP WINDOWS (เด้ง 10 หน้าต่างซ้อนเหลื่อมกัน)
+        ────────────────────────────────────────────── */
+        var opened = 0;
+        var winW = 440;
+        var winH = 290;
+        var offsetX = 36;
+        var offsetY = 36;
+        var startX = 60;
+        var startY = 50;
+        var screenW = window.screen.availWidth || 1920;
+        var screenH = window.screen.availHeight || 1080;
+        var maxRight = screenW - winW - 50;
+        var maxBottom = screenH - winH - 50;
+
+        for (var i = 0; i < tabCount; i++) {
+          var posX = startX + ((i * offsetX) % Math.max(100, maxRight));
+          var posY = startY + ((i * offsetY) % Math.max(100, maxBottom));
+
+          var isScreenMuted = isMuted;
+          if (!isMuted && audioOpt === 'first' && i !== 0) {
+            isScreenMuted = true;
+          }
+
+          var targetUrl = 'player.html?v=' + videoId +
+                          '&tab=' + (i + 1) +
+                          '&mute=' + (isScreenMuted ? '1' : '0') +
+                          '&vol=' + volVal +
+                          '&dur=' + totalSeconds;
+
+          var winFeatures = 'width=' + winW + ',height=' + winH +
+                            ',left=' + posX + ',top=' + posY +
+                            ',popup=1,resizable=yes,scrollbars=no,status=no,toolbar=no,menubar=no';
+
+          var w = window.open(targetUrl, 'yt_popup_' + i + '_' + Date.now(), winFeatures);
+          if (w) {
+            wins.push(w);
+            opened++;
+          } else {
+            wins.push(null);
+          }
+
+          var c = document.createElement('div');
+          c.className = 'tab-card' + (w ? ' active' : ' closed');
+          c.id = 'tab_card_' + i;
+          c.innerHTML =
+            '<span class="tab-dot"></span>' +
+            '<span class="tab-name">หน้าต่าง #' + (i + 1) + '</span>' +
+            '<span class="tab-status" id="tab_status_' + i + '">' + (w ? 'กำลังเล่น' : 'บล็อก') + '</span>';
+          grid.appendChild(c);
+          cards.push(c);
+        }
+
+        tabCountStatus.textContent = 'เปิดอยู่ ' + opened + ' / ' + tabCount + ' หน้าต่าง';
+        statusTitle.textContent = 'กำลังเล่น ' + opened + ' หน้าต่างป๊อปอัป YouTube ซ้อนกัน';
+        statusSub.textContent = 'Video ID: ' + videoId + ' (เปิดแยกเป็น ' + opened + ' หน้าต่างซ้อนเหลื่อมกัน)';
+
+        if (opened < tabCount) {
+          showToast('เบราว์เซอร์บล็อกหน้าต่างที่เหลือ! ให้คลิกไอคอน Pop-up ด้านบน URL แล้วเลือก Always allow pop-ups', '⚠️', 6500);
+        } else {
+          showToast('เด้งเปิดครบ ' + opened + ' หน้าต่างซ้อนกันแล้ว! 🚀', '✅', 3000);
+        }
+      }
+
+      if (selectedMode === 'multiview') {
+        if (!multiWin) {
+          showToast('เบราว์เซอร์บล็อกการเปิดแท็บ! กรุณาอนุญาต Pop-up แล้วลองใหม่', '❌', 6000);
+          testPopups();
+          return;
+        }
+      } else {
+        if (opened === 0) {
+          showToast('เบราว์เซอร์บล็อกการเปิดหน้าต่าง! กรุณาอนุญาต Pop-up แล้วลองใหม่', '❌', 6000);
+          testPopups();
+          return;
+        }
+      }
+
+      // Change launch button to running/stop state
+      var launchBtn = document.getElementById('launchBtn');
+      launchBtn.classList.add('running');
+      launchBtn.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>' +
+        '<span>หยุดการรัน &mdash; ปิดทุกแท็บทันที</span>';
+      launchBtn.onclick = function() { stopAll(true); };
+
+      // Countdown Timer
+      var remainingSeconds = totalSeconds;
+      var ticker = setInterval(function() {
+        remainingSeconds--;
+        countdownDigits.textContent = formatTime(remainingSeconds);
+
+        var pct = Math.max(0, (remainingSeconds / totalSeconds) * 100);
+        progressFill.style.width = pct + '%';
+
+        // Check closed tabs
+        var stillOpen = 0;
+        for (var j = 0; j < wins.length; j++) {
+          if (!wins[j]) continue;
+          if (wins[j].closed) {
+            if (!cards[j].classList.contains('closed')) {
+              cards[j].classList.remove('active');
+              cards[j].classList.add('closed');
+              var st = document.getElementById('tab_status_' + j);
+              if (st) st.textContent = 'ปิดแล้ว';
+            }
+          } else {
+            stillOpen++;
+          }
+        }
+        tabCountStatus.textContent = 'เปิดอยู่ ' + stillOpen + ' / ' + tabCount + ' แท็บ';
+
+        // When all tabs are closed or timer finishes
+        if (remainingSeconds <= 0 || stillOpen === 0) {
+          clearInterval(ticker);
+          closeAll(wins, cards);
+          finishSession();
+        }
+      }, 1000);
+
+      runState = {
+        wins: wins,
+        cards: cards,
+        ticker: ticker,
+        tabCount: tabCount
+      };
+    }
+
+    /* ──────────────────────────────────────────────
+       Close all tabs safely
+    ────────────────────────────────────────────── */
+    function closeAll(wins, cards) {
+      if (!wins) return;
+      for (var i = 0; i < wins.length; i++) {
+        if (wins[i] && !wins[i].closed) {
+          try {
+            wins[i].close();
+          } catch(e) {}
+        }
+        if (cards && cards[i]) {
+          cards[i].classList.remove('active');
+          cards[i].classList.add('closed');
+          var st = document.getElementById('tab_status_' + i);
+          if (st) st.textContent = 'ปิดแล้ว';
+        }
+      }
+    }
+
+    /* ──────────────────────────────────────────────
+       Finish Session
+    ────────────────────────────────────────────── */
+    function finishSession() {
+      var btn = document.getElementById('launchBtn');
+      btn.classList.remove('running');
+      btn.innerHTML =
+        '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>' +
+        '<span id="launchBtnText">เริ่มรันแท็บอัตโนมัติ (' + selectedTabCount + ' แท็บ)</span>';
+      btn.onclick = launchTabs;
+
+      var dot = document.getElementById('statusDot');
+      dot.style.background = '#555';
+      dot.style.boxShadow = 'none';
+
+      document.getElementById('statusTitle').textContent = 'เสร็จสิ้น &mdash; ปิดทุกแท็บ YouTube เรียบร้อยแล้ว';
+      document.getElementById('countdownDigits').textContent = '00:00';
+      document.getElementById('progressBarFill').style.width = '0%';
+      document.getElementById('tabCountStatus').textContent = 'ปิดครบทุกแท็บแล้ว';
+
+      showToast('คลิปจบแล้ว — ปิดทุกแท็บเรียบร้อยแล้ว!', '🎉', 4500);
+      runState = null;
+    }
+
+    /* ──────────────────────────────────────────────
+       Stop All (Manual or on new run)
+    ────────────────────────────────────────────── */
+    function stopPreviousSession() {
+      if (!runState) return;
+      clearInterval(runState.ticker);
+      closeAll(runState.wins, runState.cards);
+      runState = null;
+    }
+
+    function stopAll(manual) {
+      if (!runState) return;
+      clearInterval(runState.ticker);
+      closeAll(runState.wins, runState.cards);
+      finishSession();
+      if (manual) {
+        showToast('สั่งหยุดการรันและปิดทุกแท็บแล้ว', '⏹', 3000);
+      }
+    }
+
+    function onAudioModeChange() {
+      var audioOpt = document.querySelector('input[name="audioMode"]:checked').value;
+      var sliderWrap = document.getElementById('volumeSliderWrap');
+      if (sliderWrap) {
+        if (audioOpt === 'mute') {
+          sliderWrap.style.display = 'none';
+        } else {
+          sliderWrap.style.display = 'flex';
+        }
+      }
+    }
+
+    // Check file:// protocol to warn user
+    if (window.location.protocol === 'file:') {
+      var pb = document.getElementById('fileProtocolBanner');
+      if (pb) pb.style.display = 'block';
+    }
+
+    // Initialize total time display on load
+    updateTotalTimeDisplay();
+  </script>
+</body>
+</html>

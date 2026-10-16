@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>YouTube Multi-Screen Player — เล่นพร้อมกัน 10 จอ</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --card-bg: #141414;
+      --border: #222;
+      --border-light: #333;
+      --red: #ff0000;
+      --red-dark: #cc0000;
+      --red-glow: rgba(255, 0, 0, 0.4);
+      --green: #2ecc71;
+      --green-glow: rgba(46, 204, 113, 0.35);
+      --text: #f0f0f0;
+      --text-dim: #888;
+      --accent: #3498db;
+    }
+
+    body {
+      font-family: 'Prompt', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* FILE:// WARNING BANNER (ERROR 153 PREVENTION) */
+    .file-protocol-banner {
+      display: none;
+      background: linear-gradient(90deg, #7a1500, #420800);
+      border-bottom: 2px solid #ff4444;
+      padding: 12px 20px;
+      color: #fff;
+      font-size: .88rem;
+      z-index: 9999;
+      position: sticky;
+      top: 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+      animation: slideDown .3s ease-out;
+    }
+    @keyframes slideDown {
+      from { transform: translateY(-100%); }
+      to { transform: translateY(0); }
+    }
+    .file-protocol-content {
+      max-width: 1920px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .file-protocol-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .file-protocol-btn {
+      background: #ff2222;
+      color: #fff;
+      border: 1px solid #fff;
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: .82rem;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .2s;
+    }
+    .file-protocol-btn:hover {
+      background: #fff;
+      color: #b00;
+    }
+
+    /* TOP BAR HUD */
+    .top-hud {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.7);
+    }
+
+    .hud-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .hud-badge {
+      background: var(--red);
+      color: #fff;
+      font-size: .78rem;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 6px;
+      letter-spacing: .5px;
+      box-shadow: 0 0 12px var(--red-glow);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+    .hud-badge.green {
+      background: #112e18;
+      border: 1px solid var(--green);
+      color: #a3f7c4;
+      box-shadow: 0 0 10px var(--green-glow);
+    }
+    .hud-title {
+      font-size: .92rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 320px;
+      color: #eee;
+    }
+
+    .hud-center {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .timer-wrap {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 5px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .timer-label {
+      font-size: .76rem;
+      color: var(--text-dim);
+    }
+    .timer-digits {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--red);
+      font-family: 'Inter', sans-serif;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    /* SOUND CONTROLS (VOLUME SLIDER & MUTE) */
+    .volume-ctrl-group {
+      display: flex;
+      align-items: center;
+      background: #181818;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 4px 10px;
+      gap: 8px;
+    }
+    .volume-btn {
+      background: transparent;
+      border: none;
+      color: #eee;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3px;
+      border-radius: 4px;
+      transition: transform .15s, color .2s;
+    }
+    .volume-btn:hover {
+      color: #fff;
+      transform: scale(1.1);
+    }
+    .volume-slider {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 90px;
+      height: 6px;
+      border-radius: 3px;
+      background: #333;
+      outline: none;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    .volume-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--red);
+      cursor: pointer;
+      box-shadow: 0 0 6px rgba(255,0,0,0.8);
+      transition: transform .1s;
+    }
+    .volume-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .volume-slider::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--red);
+      cursor: pointer;
+      border: none;
+    }
+    .volume-percent {
+      font-size: .75rem;
+      font-family: 'Inter', sans-serif;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+      min-width: 32px;
+      text-align: right;
+    }
+
+    .audio-mode-select {
+      background: #181818;
+      border: 1px solid #333;
+      color: #bbb;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-family: inherit;
+      font-size: .76rem;
+      outline: none;
+      cursor: pointer;
+    }
+    .audio-mode-select:focus {
+      border-color: var(--red);
+    }
+
+    .hud-btn {
+      background: #202020;
+      border: 1px solid #3a3a3a;
+      color: #eee;
+      border-radius: 6px;
+      padding: 7px 12px;
+      font-family: inherit;
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all .2s;
+      white-space: nowrap;
+    }
+    .hud-btn:hover {
+      background: #333;
+      border-color: #555;
+    }
+    .hud-btn.active {
+      background: #12281a;
+      border-color: var(--green);
+      color: #a3f7c4;
+    }
+    .hud-btn.danger {
+      background: #3a0000;
+      border-color: #770000;
+      color: #ff8888;
+    }
+    .hud-btn.danger:hover {
+      background: #550000;
+      border-color: var(--red);
+      color: #fff;
+    }
+
+    /* PROGRESS BAR */
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #1a1a1a;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--red), #ff5555);
+      width: 100%;
+      transition: width 1s linear;
+    }
+
+    /* AUTOPLAY INTERACTION OVERLAY BANNER */
+    .autoplay-notice {
+      display: none;
+      background: linear-gradient(90deg, #1b3a57, #13273a);
+      border-bottom: 1px solid #3498db;
+      padding: 8px 16px;
+      text-align: center;
+      font-size: .84rem;
+      color: #c9e6ff;
+    }
+    .autoplay-notice.show {
+      display: block;
+    }
+    .autoplay-btn {
+      background: #3498db;
+      color: #fff;
+      border: none;
+      padding: 4px 14px;
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: .78rem;
+      font-weight: 700;
+      margin-left: 10px;
+      cursor: pointer;
+    }
+
+    /* GRID CONTAINER */
+    .grid-container {
+      flex: 1;
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+      width: 100%;
+      max-width: 1920px;
+      margin: 0 auto;
+    }
+
+    /* Dynamic grid columns */
+    .cols-1 { grid-template-columns: 1fr; }
+    .cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .cols-5 { grid-template-columns: repeat(5, 1fr); }
+
+    /* SCREEN CARD */
+    .screen-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+      transition: border-color .2s, box-shadow .2s;
+    }
+    .screen-card:hover {
+      border-color: #444;
+    }
+    .screen-card.ended {
+      border-color: #1a3a22;
+      opacity: 0.65;
+    }
+    .screen-card.error {
+      border-color: #661111;
+    }
+
+    .screen-header {
+      background: #181818;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+      font-size: .78rem;
+      gap: 8px;
+    }
+    .screen-header-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .screen-tag {
+      font-weight: 700;
+      color: #eee;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .user-pill {
+      background: #252525;
+      border: 1px solid #383838;
+      color: #bbb;
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .68rem;
+      font-weight: 500;
+      letter-spacing: .2px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .user-pill .icon {
+      font-size: .75rem;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      transition: all .3s;
+    }
+    .dot.ended {
+      background: #666;
+      box-shadow: none;
+    }
+    .dot.waiting {
+      background: #f39c12;
+      box-shadow: 0 0 6px #f39c12;
+      animation: pulse 1s infinite;
+    }
+    .dot.error {
+      background: #e74c3c;
+      box-shadow: 0 0 6px #e74c3c;
+    }
+
+    .screen-header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .screen-vol-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-dim);
+      font-size: .85rem;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 3px;
+      transition: color .2s;
+    }
+    .screen-vol-btn:hover {
+      color: #fff;
+    }
+    .screen-vol-btn.active {
+      color: #2ecc71;
+    }
+    .screen-status-text {
+      color: var(--text-dim);
+      font-size: .72rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .screen-video-wrap {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+    }
+    .screen-video-wrap iframe,
+    .screen-video-wrap > div {
+      width: 100% !important;
+      height: 100% !important;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    /* CARD ERROR FALLBACK OVERLAY */
+    .card-error-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 15, 15, 0.95);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      text-align: center;
+      gap: 8px;
+      z-index: 5;
+    }
+    .card-error-overlay.show {
+      display: flex;
+    }
+    .card-error-overlay h4 {
+      color: #ff6b6b;
+      font-size: .85rem;
+    }
+    .card-error-overlay p {
+      color: #aaa;
+      font-size: .74rem;
+      line-height: 1.35;
+    }
+
+    /* COMPLETION OVERLAY */
+    .completion-banner {
+      display: none;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #0d2815;
+      border: 1px solid var(--green);
+      border-radius: 30px;
+      padding: 12px 28px;
+      color: #a3f7c4;
+      font-size: .95rem;
+      font-weight: 600;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+      z-index: 2000;
+      align-items: center;
+      gap: 12px;
+    }
+    .completion-banner.show {
+      display: flex;
+      animation: popUp .3s ease-out;
+    }
+    @keyframes popUp {
+      from { transform: translateX(-50%) translateY(30px); opacity: 0; }
+      to { transform: translateX(-50%) translateY(0); opacity: 1; }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: .4; transform: scale(.85); }
+    }
+
+    @media (max-width: 1100px) {
+      .cols-5 { grid-template-columns: repeat(3, 1fr); }
+      .hud-title { max-width: 200px; }
+    }
+    @media (max-width: 800px) {
+      .cols-3, .cols-4, .cols-5 { grid-template-columns: repeat(2, 1fr); }
+      .top-hud { flex-direction: column; align-items: stretch; gap: 10px; }
+      .hud-left, .hud-center, .hud-right { justify-content: space-between; }
+    }
+    @media (max-width: 500px) {
+      .cols-2, .cols-3, .cols-4, .cols-5 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FILE PROTOCOL DETECTION BANNER (แก้ Error 153) -->
+  <div class="file-protocol-banner" id="fileProtocolBanner">
+    <div class="file-protocol-content">
+      <div class="file-protocol-left">
+        <span style="font-size: 1.3rem;">⚠️</span>
+        <div>
+          <strong>ตรวจพบการเปิดไฟล์ตรง (file://) ซึ่ง YouTube จะบล็อกด้วย Error 153</strong>
+          <div style="font-size:.78rem; opacity:.9;">YouTube บังคับให้ส่ง Referrer จากเซิร์ฟเวอร์ กรุณาเปิดผ่าน Local Server เพื่อให้เล่นได้ 100%</div>
+        </div>
+      </div>
+      <div>
+        <a href="http://localhost:8080/multiview.html" id="linkToLocalhost" class="file-protocol-btn">
+          🚀 เปิดผ่าน Localhost (คลิกที่นี่)
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTOPLAY PERMISSION BANNER -->
+  <div class="autoplay-notice" id="autoplayNotice">
+    <span>💡 เบราว์เซอร์อาจระงับเสียงอัตโนมัติ:</span>
+    <button class="autoplay-btn" onclick="userInteractPlayAll()">▶️ คลิกเพื่อให้ทุกจอเริ่มเล่นพร้อมเสียง</button>
+  </div>
+
+  <!-- TOP HUD -->
+  <div class="top-hud">
+    <div class="hud-left">
+      <div class="hud-badge">
+        <span>🔴</span>
+        <span id="screenCountBadge">10 จอ</span>
+      </div>
+      <div class="hud-badge green">
+        <span>🛡️</span>
+        <span>จำลอง 10 ผู้ใช้</span>
+      </div>
+      <div class="hud-title" id="videoTitleDisplay">กำลังโหลด YouTube Multi-View...</div>
+    </div>
+
+    <div class="hud-center">
+      <div class="timer-wrap">
+        <span class="timer-label">เวลานับถอยหลัง:</span>
+        <span class="timer-digits" id="countdownDigits">00:00</span>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <!-- Master Sound Controls (เลื่อนระดับเสียงและปิด/เปิดได้) -->
+      <div class="volume-ctrl-group">
+        <button class="volume-btn" id="masterMuteBtn" onclick="toggleMuteAll()" title="ปิด/เปิดเสียง">
+          <span id="muteIcon">🔇</span>
+        </button>
+        <input
+          type="range"
+          id="masterVolumeSlider"
+          class="volume-slider"
+          min="0"
+          max="100"
+          value="50"
+          oninput="onVolumeSliderChange(this.value)"
+          title="เลื่อนปรับระดับเสียง (0% - 100%)"
+        />
+        <span class="volume-percent" id="volumePercentDisplay">50%</span>
+        <select class="audio-mode-select" id="audioRoutingSelect" onchange="onAudioRoutingChange(this.value)" title="เลือกรูปแบบการเปิดเสียง">
+          <option value="first">เฉพาะจอแรก (แนะนำ)</option>
+          <option value="all">เปิดทุกจอ</option>
+        </select>
+      </div>
+
+      <!-- Loop Toggle -->
+      <button class="hud-btn" id="loopToggleBtn" onclick="toggleLoop()" title="เล่นวนซ้ำต่อเนื่อง">
+        <span>🔁</span>
+        <span id="loopText">วนซ้ำ</span>
+      </button>
+
+      <!-- Close Window -->
+      <button class="hud-btn danger" onclick="closeThisWindow()">
+        ✕ ปิดหน้านี้
+      </button>
+    </div>
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-bar">
+    <div class="progress-fill" id="progressFill"></div>
+  </div>
+
+  <!-- GRID OF SCREENS -->
+  <div class="grid-container" id="gridContainer"></div>
+
+  <!-- COMPLETION OVERLAY -->
+  <div class="completion-banner" id="completionBanner">
+    <span>🎉</span>
+    <span id="completionText">เล่นคลิปจบครบทุกจอแล้ว — กำลังปิดหน้านี้อัตโนมัติ...</span>
+  </div>
+
+  <!-- YOUTUBE IFRAME API -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    /* ──────────────────────────────────────────────
+       Parameter Parsing & Error 153 Pre-check
+    ────────────────────────────────────────────── */
+    var params = new URLSearchParams(window.location.search);
+    var videoId = params.get('v') || 'dQw4w9WgXcQ';
+    var screenCount = parseInt(params.get('count'), 10) || 10;
+    var durationSec = parseInt(params.get('dur'), 10) || 180;
+    var initialMute = params.get('mute') !== '0';
+    var initialVolume = parseInt(params.get('vol'), 10) || 50;
+    var autoClose = params.get('autoclose') !== '0';
+    var isLooping = params.get('loop') === '1';
+
+    if (screenCount < 1) screenCount = 1;
+    if (screenCount > 50) screenCount = 50;
+
+    // Detect file:// protocol and show warning
+    if (window.location.protocol === 'file:') {
+      var banner = document.getElementById('fileProtocolBanner');
+      if (banner) banner.style.display = 'block';
+      var lnk = document.getElementById('linkToLocalhost');
+      if (lnk) {
+        lnk.href = 'http://localhost:8080/multiview.html' + window.location.search;
+      }
+    }
+
+    document.getElementById('screenCountBadge').textContent = screenCount + ' จอพร้อมกัน';
+    document.title = 'กำลังเล่น ' + screenCount + ' จอพร้อมกัน — YouTube Multi-View';
+
+    // Set grid columns layout
+    var container = document.getElementById('gridContainer');
+    if (screenCount === 1) container.className = 'grid-container cols-1';
+    else if (screenCount === 2) container.className = 'grid-container cols-2';
+    else if (screenCount <= 4) container.className = 'grid-container cols-2';
+    else if (screenCount <= 6) container.className = 'grid-container cols-3';
+    else if (screenCount <= 8) container.className = 'grid-container cols-4';
+    else container.className = 'grid-container cols-5'; // 10, 15, 20
+
+    // Fetch video title via oEmbed
+    fetch('https://noembed.com/embed?url=https://www.youtube.com/watch?v=' + videoId)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d && d.title) {
+          document.getElementById('videoTitleDisplay').textContent = d.title;
+          document.title = screenCount + ' จอ: ' + d.title;
+        }
+      })
+      .catch(function() {});
+
+    /* ──────────────────────────────────────────────
+       State & Simulated User Profiles (คนละยูเซอร์)
+    ────────────────────────────────────────────── */
+    var players = [];
+    var playerStates = [];
+    var isMuted = initialMute;
+    var currentVolume = initialVolume;
+    var audioRouting = 'first'; // 'first' (จอแรกจอเดียว) or 'all' (ทุกจอ)
+    var endedCount = 0;
+    var remainingTime = durationSec;
+    var timerInterval = null;
+    var isFinished = false;
+
+    // Simulated user profiles (สร้างความหลากหลายเหมือนผู้ชมจริง 10 คน)
+    var userSimProfiles = [
+      { name: 'User #1', loc: 'TH-BKK', dev: 'Chrome/Win' },
+      { name: 'User #2', loc: 'TH-CNX', dev: 'Edge/Win' },
+      { name: 'User #3', loc: 'TH-PKT', dev: 'Chrome/Win' },
+      { name: 'User #4', loc: 'TH-KOR', dev: 'Firefox/Win' },
+      { name: 'User #5', loc: 'TH-NBI', dev: 'Chrome/Mac' },
+      { name: 'User #6', loc: 'TH-UBP', dev: 'Opera/Win' },
+      { name: 'User #7', loc: 'TH-SRI', dev: 'Brave/Win' },
+      { name: 'User #8', loc: 'TH-CBI', dev: 'Chrome/Win' },
+      { name: 'User #9', loc: 'TH-KKN', dev: 'Edge/Win' },
+      { name: 'User #10', loc: 'TH-RAY', dev: 'Chrome/Win' }
+    ];
+
+    // Setup initial UI states for Audio
+    document.getElementById('masterVolumeSlider').value = currentVolume;
+    document.getElementById('volumePercentDisplay').textContent = currentVolume + '%';
+    updateMuteButtonVisual();
+
+    if (isLooping) {
+      document.getElementById('loopToggleBtn').classList.add('active');
+    }
+
+    // Generate Screen Cards
+    for (var i = 0; i < screenCount; i++) {
+      var profile = userSimProfiles[i % userSimProfiles.length];
+      var card = document.createElement('div');
+      card.className = 'screen-card';
+      card.id = 'card_' + i;
+      card.innerHTML =
+        '<div class="screen-header">' +
+          '<div class="screen-header-left">' +
+            '<div class="screen-tag"><span class="dot waiting" id="dot_' + i + '"></span>จอ #' + (i + 1) + '</div>' +
+            '<span class="user-pill"><span class="icon">👤</span>' + profile.name + ' <small style="opacity:0.7">(' + profile.loc + ')</small></span>' +
+          '</div>' +
+          '<div class="screen-header-right">' +
+            '<button class="screen-vol-btn" id="screen_vol_' + i + '" onclick="toggleScreenMute(' + i + ')" title="เปิด/ปิดเสียงจอนี้">🔇</button>' +
+            '<div class="screen-status-text" id="status_' + i + '">รอเชื่อมต่อ...</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="screen-video-wrap">' +
+          '<div id="player_slot_' + i + '"></div>' +
+          '<div class="card-error-overlay" id="err_overlay_' + i + '">' +
+            '<h4>⚠️ เกิดข้อผิดพลาด 153</h4>' +
+            '<p>YouTube บล็อกการเปิดแบบ file://<br>กรุณาเปิดผ่าน Localhost Server</p>' +
+            '<button class="hud-btn" style="margin-top:6px; font-size:.74rem;" onclick="retryWithDirectIframe(' + i + ')">ลองโหลดใหม่</button>' +
+          '</div>' +
+        '</div>';
+      container.appendChild(card);
+      playerStates.push({ ready: false, ended: false, muted: true, volume: currentVolume });
+    }
+
+    /* ──────────────────────────────────────────────
+       YouTube API Ready — Staggered & User Simulated
+    ────────────────────────────────────────────── */
+    function onYouTubeIframeAPIReady() {
+      // Determine origin to send to YouTube API
+      var safeOrigin = window.location.origin;
+      if (!safeOrigin || safeOrigin === 'null') {
+        safeOrigin = 'http://localhost:8080';
+      }
+
+      for (var i = 0; i < screenCount; i++) {
+        (function(idx) {
+          // Stagger each player start by 1.2s - 2.8s randomly so YouTube does not detect simultaneous burst
+          var delayMs = idx * (1200 + Math.floor(Math.random() * 800));
+
+          setTimeout(function() {
+            var isScreenMuted = isMuted;
+            if (!isMuted) {
+              if (audioRouting === 'first' && idx !== 0) {
+                isScreenMuted = true;
+              }
+            }
+
+            try {
+              players[idx] = new YT.Player('player_slot_' + idx, {
+                width: '100%',
+                height: '100%',
+                videoId: videoId,
+                host: 'https://www.youtube.com',
+                playerVars: {
+                  autoplay: 1,
+                  mute: isScreenMuted ? 1 : 0,
+                  controls: 1,
+                  rel: 0,
+                  playsinline: 1,
+                  modestbranding: 1,
+                  enablejsapi: 1,
+                  origin: safeOrigin
+                },
+                events: {
+                  onReady: function(e) {
+                    playerStates[idx].ready = true;
+                    playerStates[idx].muted = isScreenMuted;
+                    playerStates[idx].volume = currentVolume;
+
+                    try {
+                      e.target.setVolume(currentVolume);
+                      if (isScreenMuted) {
+                        e.target.mute();
+                      } else {
+                        e.target.unMute();
+                      }
+                      e.target.playVideo();
+                    } catch(err) {}
+
+                    var dot = document.getElementById('dot_' + idx);
+                    if (dot) dot.className = 'dot';
+                    var st = document.getElementById('status_' + idx);
+                    if (st) st.textContent = '🟢 กำลังเล่น';
+                    updateScreenVolIcon(idx);
+                  },
+                  onStateChange: function(e) {
+                    var st = document.getElementById('status_' + idx);
+                    var dot = document.getElementById('dot_' + idx);
+
+                    if (e.data === YT.PlayerState.PLAYING) {
+                      if (dot) dot.className = 'dot';
+                      if (st) st.textContent = '🟢 กำลังเล่น' + (!playerStates[idx].muted ? ' (' + playerStates[idx].volume + '%)' : '');
+                    } else if (e.data === YT.PlayerState.PAUSED) {
+                      if (st) st.textContent = '⏸️ หยุดชั่วคราว';
+                    } else if (e.data === YT.PlayerState.BUFFERING) {
+                      if (dot) dot.className = 'dot waiting';
+                      if (st) st.textContent = '⏳ กำลังบัฟเฟอร์';
+                    } else if (e.data === YT.PlayerState.ENDED) {
+                      handlePlayerEnded(idx);
+                    }
+                  },
+                  onError: function(e) {
+                    var errCode = e.data;
+                    var dot = document.getElementById('dot_' + idx);
+                    var st = document.getElementById('status_' + idx);
+                    if (dot) dot.className = 'dot error';
+                    if (st) st.textContent = '❌ Error ' + errCode;
+
+                    // If error 153/150/101, display fallback overlay
+                    var overlay = document.getElementById('err_overlay_' + idx);
+                    if (overlay) overlay.classList.add('show');
+                  }
+                }
+              });
+            } catch(e) {
+              console.error('Player init failed for slot ' + idx, e);
+            }
+          }, delayMs);
+        })(i);
+      }
+
+      startCountdown();
+    }
+
+    /* ──────────────────────────────────────────────
+       Audio Controls: Volume Slider, Mute, Routing
+    ────────────────────────────────────────────── */
+    function onVolumeSliderChange(val) {
+      currentVolume = parseInt(val, 10);
+      document.getElementById('volumePercentDisplay').textContent = currentVolume + '%';
+
+      if (currentVolume > 0 && isMuted) {
+        isMuted = false;
+        updateMuteButtonVisual();
+      } else if (currentVolume === 0 && !isMuted) {
+        isMuted = true;
+        updateMuteButtonVisual();
+      }
+
+      applyVolumeToPlayers();
+    }
+
+    function toggleMuteAll() {
+      isMuted = !isMuted;
+      if (!isMuted && currentVolume === 0) {
+        currentVolume = 50;
+        document.getElementById('masterVolumeSlider').value = 50;
+        document.getElementById('volumePercentDisplay').textContent = '50%';
+      }
+      updateMuteButtonVisual();
+      applyVolumeToPlayers();
+    }
+
+    function updateMuteButtonVisual() {
+      var icon = document.getElementById('muteIcon');
+      if (isMuted) {
+        icon.textContent = '🔇';
+      } else if (currentVolume > 50) {
+        icon.textContent = '🔊';
+      } else if (currentVolume > 0) {
+        icon.textContent = '🔉';
+      } else {
+        icon.textContent = '🔇';
+      }
+    }
+
+    function onAudioRoutingChange(val) {
+      audioRouting = val;
+      applyVolumeToPlayers();
+    }
+
+    function applyVolumeToPlayers() {
+      players.forEach(function(p, idx) {
+        if (!p) return;
+        var shouldMute = isMuted;
+        if (!isMuted && audioRouting === 'first' && idx !== 0) {
+          shouldMute = true;
+        }
+
+        playerStates[idx].muted = shouldMute;
+        playerStates[idx].volume = currentVolume;
+
+        try {
+          if (shouldMute) {
+            if (p.mute) p.mute();
+          } else {
+            if (p.unMute) p.unMute();
+            if (p.setVolume) p.setVolume(currentVolume);
+          }
+        } catch(e) {}
+
+        updateScreenVolIcon(idx);
+      });
+    }
+
+    function toggleScreenMute(idx) {
+      var p = players[idx];
+      if (!p) return;
+      var curMuted = playerStates[idx].muted;
+      var newMuted = !curMuted;
+
+      playerStates[idx].muted = newMuted;
+      try {
+        if (newMuted) {
+          if (p.mute) p.mute();
+        } else {
+          if (p.unMute) p.unMute();
+          if (p.setVolume) p.setVolume(currentVolume);
+        }
+      } catch(e) {}
+      updateScreenVolIcon(idx);
+    }
+
+    function updateScreenVolIcon(idx) {
+      var btn = document.getElementById('screen_vol_' + idx);
+      if (!btn) return;
+      if (playerStates[idx].muted) {
+        btn.textContent = '🔇';
+        btn.classList.remove('active');
+      } else {
+        btn.textContent = '🔊';
+        btn.classList.add('active');
+      }
+    }
+
+    function userInteractPlayAll() {
+      var banner = document.getElementById('autoplayNotice');
+      if (banner) banner.classList.remove('show');
+
+      players.forEach(function(p) {
+        if (!p) return;
+        try {
+          if (p.playVideo) p.playVideo();
+        } catch(e) {}
+      });
+      applyVolumeToPlayers();
+    }
+
+    /* ──────────────────────────────────────────────
+       Completion & Player Ended Handlers
+    ────────────────────────────────────────────── */
+    function handlePlayerEnded(idx) {
+      var card = document.getElementById('card_' + idx);
+      var dot = document.getElementById('dot_' + idx);
+      var st = document.getElementById('status_' + idx);
+
+      if (card && !card.classList.contains('ended')) {
+        card.classList.add('ended');
+        if (dot) dot.className = 'dot ended';
+        if (st) st.textContent = '✓ เล่นจบแล้ว';
+        playerStates[idx].ended = true;
+        endedCount++;
+
+        // If all players have ended
+        if (endedCount >= screenCount) {
+          triggerAllFinished();
+        }
+      }
+    }
+
+    function retryWithDirectIframe(idx) {
+      var slot = document.getElementById('player_slot_' + idx);
+      var overlay = document.getElementById('err_overlay_' + idx);
+      if (overlay) overlay.classList.remove('show');
+
+      if (slot) {
+        slot.innerHTML =
+          '<iframe width="100%" height="100%" ' +
+          'src="https://www.youtube-nocookie.com/embed/' + videoId + '?autoplay=1&mute=1&playsinline=1" ' +
+          'frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" ' +
+          'referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
+      }
+      var st = document.getElementById('status_' + idx);
+      if (st) st.textContent = '🔄 กำลังลองโหมดสำรอง';
+    }
+
+    /* ──────────────────────────────────────────────
+       Countdown Timer & Progress
+    ────────────────────────────────────────────── */
+    function formatTime(s) {
+      s = Math.max(0, Math.round(s));
+      var m = Math.floor(s / 60);
+      var sec = s % 60;
+      return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+    }
+
+    function startCountdown() {
+      document.getElementById('countdownDigits').textContent = formatTime(remainingTime);
+      var fill = document.getElementById('progressFill');
+
+      timerInterval = setInterval(function() {
+        remainingTime--;
+        document.getElementById('countdownDigits').textContent = formatTime(remainingTime);
+
+        var pct = Math.max(0, (remainingTime / durationSec) * 100);
+        fill.style.width = pct + '%';
+
+        if (remainingTime <= 0) {
+          clearInterval(timerInterval);
+          triggerAllFinished();
+        }
+      }, 1000);
+    }
+
+    function toggleLoop() {
+      isLooping = !isLooping;
+      var btn = document.getElementById('loopToggleBtn');
+      if (isLooping) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+
+    function triggerAllFinished() {
+      if (isFinished) return;
+      if (timerInterval) clearInterval(timerInterval);
+
+      if (isLooping) {
+        // Loop mode: restart all
+        endedCount = 0;
+        remainingTime = durationSec;
+        for (var i = 0; i < screenCount; i++) {
+          var card = document.getElementById('card_' + i);
+          if (card) card.classList.remove('ended');
+          playerStates[i].ended = false;
+          if (players[i] && players[i].seekTo) {
+            try {
+              players[i].seekTo(0);
+              players[i].playVideo();
+            } catch(e) {}
+          }
+        }
+        startCountdown();
+        return;
+      }
+
+      isFinished = true;
+      var banner = document.getElementById('completionBanner');
+      banner.classList.add('show');
+
+      // Auto close after 3 seconds if enabled
+      if (autoClose) {
+        var count = 3;
+        var closeTicker = setInterval(function() {
+          count--;
+          if (count <= 0) {
+            clearInterval(closeTicker);
+            window.close();
+          } else {
+            document.getElementById('completionText').textContent =
+              'เล่นจบครบ ' + screenCount + ' จอแล้ว — กำลังปิดหน้านี้ใน ' + count + ' วินาที...';
+          }
+        }, 1000);
+      }
+    }
+
+    function closeThisWindow() {
+      window.close();
+    }
+  </script>
+</body>
+</html>
